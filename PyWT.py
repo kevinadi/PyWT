@@ -4,9 +4,9 @@ Based on https://github.com/wiredtiger/wiredtiger/blob/master/examples/python/ex
 '''
 
 import argparse
-import json
 from pprint import pformat
 import bson
+from bson import json_util
 from wiredtiger import wiredtiger_open
 
 class PyWT(object):
@@ -47,7 +47,7 @@ class PyWT(object):
             if pretty:
                 output += '-----Key: {key}-----\n{val}\n\n'.format(key=key, val=pformat(val))
             else:
-                output += '{val}\n'.format(val=val)
+                output += '{val}\n'.format(val=json_util.dumps(val))
         cursor.close()
         return output
 
