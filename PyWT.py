@@ -23,6 +23,15 @@ class PyWT(object):
         ''' Returns decoded BSON obect '''
         return bson.BSON.decode(bson.BSON(content))
 
+    def find_table_name(self, namespace):
+        ''' Find the corresponding WT table name from MongoDB namespace '''
+        cursor = self.session.open_cursor('table:_mdb_catalog', None)
+        for _, value in cursor:
+            val = PyWT.bson_decode(value)
+            if val.get('ns') == namespace:
+                return self.dump_table(str(val.get('ident')), False, False)
+        return ''
+
     def insert_table(self, table):
         ''' Insert 5 records into the table '''
         self.session.create('table:'+table, 'key_format=S,value_format=S')
@@ -93,7 +102,8 @@ if __name__ == '__main__':
     parser.add_argument('--list', action='store_true', help='print MongoDB catalog content')
     parser.add_argument('--raw', action='store_true', help='print raw data')
     parser.add_argument('--pretty', action='store_true', help='pretty print documents')
-    parser.add_argument('--table', help='WT table to dump')
+    parser.add_argument('--table', help='WT table to print')
+    parser.add_argument('--export', help='MongoDB namespace to export')
     args = parser.parse_args()
 
     wt = PyWT(args.dbpath)
@@ -101,3 +111,5 @@ if __name__ == '__main__':
         print wt.dump_catalog()
     elif args.table:
         print wt.dump_table(args.table, args.raw, args.pretty)
+    elif args.export:
+        print wt.find_table_name(args.export)
