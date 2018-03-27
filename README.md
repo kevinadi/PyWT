@@ -5,6 +5,7 @@ Python script to delve into MongoDB's WiredTiger data files
 
 * `pip install pymongo`
 * `pip install wiredtiger`
+* `pip install blessings`
 
 Please note that proper tooling is required to install the WiredTiger Python module. Please refer to [the WiredTiger documentation](http://source.wiredtiger.com/develop/build-posix.html) for instructions on how to successfully compile WiredTiger.
 
@@ -12,16 +13,17 @@ Please note that proper tooling is required to install the WiredTiger Python mod
 
 ```
 usage: PyWT.py [-h] [--dbpath DBPATH] [--list] [--raw] [--pretty]
-               [--table TABLE] [--export EXPORT]
+               [--table TABLE] [--export EXPORT] [--export-all]
 
 optional arguments:
   -h, --help       show this help message and exit
-  --dbpath DBPATH  dbpath
+  --dbpath DBPATH  dbpath (defaults to the current directory)
   --list           print MongoDB catalog content
   --raw            print raw data
   --pretty         pretty print documents
   --table TABLE    WT table to print
   --export EXPORT  MongoDB namespace to export
+  --export-all     Export all MongoDB namespaces
 ```
 
 ## Examples
