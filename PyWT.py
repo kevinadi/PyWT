@@ -6,8 +6,10 @@ Based on https://github.com/wiredtiger/wiredtiger/blob/master/examples/python/ex
 import argparse
 from pprint import pformat
 import bson
+import os
 from bson import json_util
 from wiredtiger import wiredtiger_open
+from blessings import Terminal
 
 class PyWT(object):
     ''' Python WiredTiger '''
@@ -23,14 +25,31 @@ class PyWT(object):
         ''' Returns decoded BSON obect '''
         return bson.BSON.decode(bson.BSON(content))
 
-    def find_table_name(self, namespace):
+    def export_table_name(self, namespace):
         ''' Find the corresponding WT table name from MongoDB namespace '''
         cursor = self.session.open_cursor('table:_mdb_catalog', None)
         for _, value in cursor:
             val = PyWT.bson_decode(value)
             if val.get('ns') == namespace:
-                return self.dump_table(str(val.get('ident')), False, False)
+                return self.dump_table(str(val.get('ident')), raw=False, pretty=False)
         return ''
+
+    def export_all(self):
+        ''' Export all namespaces. Skip over any collection with missing files '''
+        cursor = self.session.open_cursor('table:_mdb_catalog', None)
+        output = []
+        for _, value in cursor:
+            val = PyWT.bson_decode(value)
+            namespace = val.get('ns')
+            ident = val.get('ident')
+            if not namespace or not os.path.isfile(ident + '.wt'):
+                continue
+            if os.path.isfile(ident + '.wt'):
+                print 'Exporting', namespace, '...',
+                with open(namespace + '.json', 'w') as outfile:
+                    outfile.write(self.dump_table(str(ident), raw=False, pretty=False))
+                print 'done'
+        return True
 
     def insert_table(self, table):
         ''' Insert 5 records into the table '''
@@ -62,6 +81,7 @@ class PyWT(object):
 
     def dump_catalog(self):
         ''' Dump the _mdb_catalog table '''
+        term = Terminal()
         cursor = self.session.open_cursor('table:_mdb_catalog', None)
         sizes = self.session.open_cursor('table:sizeStorer', None)
         output = ''
@@ -75,6 +95,8 @@ class PyWT(object):
                 continue
             print 'MongoDB namespace : {ns}'.format(ns=namespace)
             print 'WiredTiger table  : {tbl}'.format(tbl=table)
+            if not os.path.isfile(table + '.wt'):
+                print term.red + '*** Collection file ' + table + '.wt not found ***' + term.normal
 
             sizes.set_key('table:'+str(table))
             if sizes.search() == 0:
@@ -88,6 +110,8 @@ class PyWT(object):
                 print 'Indexes :'
                 for index in sorted(indexes):
                     print '    {1} : {0}'.format(index, indexes.get(index))
+                    if not os.path.isfile(indexes.get(index) + '.wt'):
+                        print term.red + '    *** Index file ' + indexes.get(index) + '.wt not found ***' + term.normal
 
             print
         cursor.close()
@@ -98,12 +122,13 @@ class PyWT(object):
 if __name__ == '__main__':
     # pylint: disable=invalid-name
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dbpath', default='/data/db', help='dbpath')
+    parser.add_argument('--dbpath', default='.', help='dbpath (default is current directory)')
     parser.add_argument('--list', action='store_true', help='print MongoDB catalog content')
     parser.add_argument('--raw', action='store_true', help='print raw data')
     parser.add_argument('--pretty', action='store_true', help='pretty print documents')
     parser.add_argument('--table', help='WT table to print')
     parser.add_argument('--export', help='MongoDB namespace to export')
+    parser.add_argument('--export-all', action='store_true', help='Export all namespaces')
     args = parser.parse_args()
 
     wt = PyWT(args.dbpath)
@@ -112,4 +137,6 @@ if __name__ == '__main__':
     elif args.table:
         print wt.dump_table(args.table, args.raw, args.pretty)
     elif args.export:
-        print wt.find_table_name(args.export)
+        print wt.export_table_name(args.export)
+    elif args.export_all:
+        wt.export_all()
