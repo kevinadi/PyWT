@@ -3,13 +3,14 @@
 Based on https://github.com/wiredtiger/wiredtiger/blob/master/examples/python/ex_access.py
 '''
 
-import argparse
+from __future__ import print_function
+from blessings import Terminal
+from bson import json_util
 from pprint import pformat
+from wiredtiger import wiredtiger_open
+import argparse
 import bson
 import os
-from bson import json_util
-from wiredtiger import wiredtiger_open
-from blessings import Terminal
 
 class PyWT(object):
     ''' Python WiredTiger '''
@@ -45,10 +46,10 @@ class PyWT(object):
             if not namespace or not os.path.isfile(ident + '.wt'):
                 continue
             if os.path.isfile(ident + '.wt'):
-                print 'Exporting', namespace, '...',
+                print('Exporting', namespace, '...', end=' ')
                 with open(namespace + '.json', 'w') as outfile:
                     outfile.write(self.dump_table(str(ident), raw=False, pretty=False))
-                print 'done'
+                print('done')
         return True
 
     def insert_table(self, table):
@@ -93,25 +94,25 @@ class PyWT(object):
 
             if not namespace:
                 continue
-            print 'MongoDB namespace : {ns}'.format(ns=namespace)
-            print 'WiredTiger table  : {tbl}'.format(tbl=table)
+            print('MongoDB namespace : {ns}'.format(ns=namespace))
+            print('WiredTiger table  : {tbl}'.format(tbl=table))
             if not os.path.isfile(table + '.wt'):
-                print term.red + '*** Collection file ' + table + '.wt not found ***' + term.normal
+                print(term.red + '*** Collection file ' + table + '.wt not found ***' + term.normal)
 
             sizes.set_key('table:'+str(table))
             if sizes.search() == 0:
                 wtsizes = PyWT.bson_decode(sizes.get_value())
                 datasize = wtsizes.get('dataSize')
                 numrecords = wtsizes.get('numRecords')
-                print 'Data Size         : {0} bytes ({1} MB)'.format(datasize, datasize / 1024**2)
-                print 'Num Records       : {0}'.format(numrecords)
+                print('Data Size         : {0} bytes ({1} MB)'.format(datasize, datasize / 1024**2))
+                print('Num Records       : {0}'.format(numrecords))
 
             if indexes:
-                print 'Indexes :'
+                print('Indexes :')
                 for index in sorted(indexes):
-                    print '    {1} : {0}'.format(index, indexes.get(index))
+                    print('    {1} : {0}'.format(index, indexes.get(index)))
                     if not os.path.isfile(indexes.get(index) + '.wt'):
-                        print term.red + '    *** Index file ' + indexes.get(index) + '.wt not found ***' + term.normal
+                        print(term.red + '    *** Index file ' + indexes.get(index) + '.wt not found ***' + term.normal)
 
             print
         cursor.close()
@@ -133,10 +134,10 @@ if __name__ == '__main__':
 
     wt = PyWT(args.dbpath)
     if args.list:
-        print wt.dump_catalog()
+        print(wt.dump_catalog())
     elif args.table:
-        print wt.dump_table(args.table, args.raw, args.pretty)
+        print(wt.dump_table(args.table, args.raw, args.pretty))
     elif args.export:
-        print wt.export_table_name(args.export)
+        print(wt.export_table_name(args.export))
     elif args.export_all:
         wt.export_all()
