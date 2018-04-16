@@ -19,7 +19,7 @@ class PyWT(object):
         ''' Connect to the database and open a session '''
         conn = wiredtiger_open(dbpath, 'create')
         self.session = conn.open_session()
-        self.dpath = dbpath
+        self.dbpath = dbpath
 
     @staticmethod
     def bson_decode(content):
@@ -96,7 +96,7 @@ class PyWT(object):
                 continue
             print('MongoDB namespace : {ns}'.format(ns=namespace))
             print('WiredTiger table  : {tbl}'.format(tbl=table))
-            if not os.path.isfile(table + '.wt'):
+            if not os.path.isfile(self.dbpath + os.sep + table + '.wt'):
                 print(term.red + '*** Collection file ' + table + '.wt not found ***' + term.normal)
 
             sizes.set_key('table:'+str(table))
@@ -111,10 +111,10 @@ class PyWT(object):
                 print('Indexes :')
                 for index in sorted(indexes):
                     print('    {1} : {0}'.format(index, indexes.get(index)))
-                    if not os.path.isfile(indexes.get(index) + '.wt'):
+                    if not os.path.isfile(self.dbpath + os.sep + indexes.get(index) + '.wt'):
                         print(term.red + '    *** Index file ' + indexes.get(index) + '.wt not found ***' + term.normal)
 
-            print
+            print()
         cursor.close()
         sizes.close()
         return output
@@ -141,3 +141,5 @@ if __name__ == '__main__':
         print(wt.export_table_name(args.export))
     elif args.export_all:
         wt.export_all()
+    else:
+        print(wt.dump_catalog())
