@@ -94,16 +94,20 @@ class PyWT(object):
 
             if not namespace:
                 continue
+            diskfile = self.dbpath + os.sep + table + '.wt'
+
             print('MongoDB namespace : {ns}'.format(ns=namespace))
             print('WiredTiger table  : {tbl}'.format(tbl=table))
-            if not os.path.isfile(self.dbpath + os.sep + table + '.wt'):
+            if not os.path.isfile(diskfile):
                 print(term.red + '*** Collection file ' + table + '.wt not found ***' + term.normal)
 
             sizes.set_key('table:'+str(table))
             if sizes.search() == 0:
+                diskfilesize = os.path.getsize(diskfile)
                 wtsizes = PyWT.bson_decode(sizes.get_value())
                 datasize = wtsizes.get('dataSize')
                 numrecords = wtsizes.get('numRecords')
+                print('File Size         : {0} bytes ({1} MB)'.format(diskfilesize, diskfilesize / 1024**2))
                 print('Data Size         : {0} bytes ({1} MB)'.format(datasize, datasize / 1024**2))
                 print('Num Records       : {0}'.format(numrecords))
 
