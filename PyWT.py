@@ -114,9 +114,13 @@ class PyWT(object):
             if indexes:
                 print('Indexes :')
                 for index in sorted(indexes):
+                    indexdiskfile = self.dbpath + os.sep + indexes.get(index) + '.wt'
                     print('    {1} : {0}'.format(index, indexes.get(index)))
-                    if not os.path.isfile(self.dbpath + os.sep + indexes.get(index) + '.wt'):
+                    if not os.path.isfile(indexdiskfile):
                         print(term.red + '    *** Index file ' + indexes.get(index) + '.wt not found ***' + term.normal)
+                    else:
+                        indexdiskfilesize = os.path.getsize(indexdiskfile)
+                        print('        File Size: {0} ({1} MB)'.format(indexdiskfilesize, indexdiskfilesize / 1024**2))
 
             print()
         cursor.close()
