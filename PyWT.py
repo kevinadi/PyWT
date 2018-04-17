@@ -96,32 +96,43 @@ class PyWT(object):
                 continue
             diskfile = self.dbpath + os.sep + table + '.wt'
 
-            print('MongoDB namespace : {ns}'.format(ns=namespace))
+            if namespace.startswith('admin') or namespace.startswith('local') or namespace.startswith('config'):
+                namespacestring = term.yellow + namespace + term.normal
+            else:
+                namespacestring = term.blue + namespace + term.normal
+            print('MongoDB namespace : {ns}'.format(ns=namespacestring))
             print('WiredTiger table  : {tbl}'.format(tbl=table))
             if not os.path.isfile(diskfile):
                 print(term.red + '*** Collection file ' + table + '.wt not found ***' + term.normal)
 
             sizes.set_key('table:'+str(table))
             if sizes.search() == 0:
+                if not os.path.exists(diskfile):
+                    print()
+                    continue
                 diskfilesize = os.path.getsize(diskfile)
                 wtsizes = PyWT.bson_decode(sizes.get_value())
                 datasize = wtsizes.get('dataSize')
                 numrecords = wtsizes.get('numRecords')
                 print('File Size         : {0} bytes ({1} MB)'.format(diskfilesize, diskfilesize / 1024**2))
                 print('Data Size         : {0} bytes ({1} MB)'.format(datasize, datasize / 1024**2))
+                print('Space Utilization : {0} %'.format(round(datasize * 100.0 / diskfilesize, 2)))
                 print('Num Records       : {0}'.format(numrecords))
 
             if indexes:
+                indexsize = 0
                 print('Indexes :')
                 for index in sorted(indexes):
                     indexdiskfile = self.dbpath + os.sep + indexes.get(index) + '.wt'
-                    print('    {1} : {0}'.format(index, indexes.get(index)))
                     if not os.path.isfile(indexdiskfile):
                         print(term.red + '    *** Index file ' + indexes.get(index) + '.wt not found ***' + term.normal)
                     else:
                         indexdiskfilesize = os.path.getsize(indexdiskfile)
-                        print('        File Size: {0} ({1} MB)'.format(indexdiskfilesize, indexdiskfilesize / 1024**2))
+                        print(term.green + '    {0}'.format(index) + term.normal + ' : {0}'.format(indexes.get(index)) +
+                              '    Size: {0} bytes ({1} MB)'.format(indexdiskfilesize, indexdiskfilesize / 1024**2))
+                        indexsize = indexdiskfilesize
 
+            print('Total namespace size : {0} bytes ({1} MB)'.format(datasize + indexsize, (datasize+indexsize) / 1024**2))
             print()
         cursor.close()
         sizes.close()
